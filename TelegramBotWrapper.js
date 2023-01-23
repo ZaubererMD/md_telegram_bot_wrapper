@@ -24,12 +24,17 @@ class TelegramBotWrapper {
         this.telegramBot.onText(/^([^/].*)/, (msg, matches) => {
             // verify that the message comes from a known user
             this.checkMessage(msg, matches)
-            .then(({ msg, matches, user }) => {
+            .then(({ msg, parms, user }) => {
                 // messages that are no commands can only be handled if there is a user context
                 if(user.hasContext()) {
-                    let msgHandler = this.getMsgHandler(user.getContext().nextMsgHandlerID);
+                    let userContext = user.getContext();
+                    let msgHandler = this.getMsgHandler(userContext.nextMsgHandlerID);
                     if(msgHandler !== undefined && msgHandler !== null) {
-                        msgHandler.execute(msg, matches, user);
+                        if(userContext.previousParms !== null) {
+                            // prepend the previous parameters before the new ones
+                            parms = [...userContext.previousParms, ...parms];
+                        }
+                        msgHandler.execute(msg, parms, user);
                     }
                 }
             }).catch((e) => {
@@ -90,14 +95,17 @@ class TelegramBotWrapper {
         this.telegramBot.onText(command.regex, (msg, matches) => {
             // verify that the message comes from a known user
             this.checkMessage(msg, matches)
-            .then(({ msg, matches, user }) => {
+            .then(({ msg, parms, user }) => {
                 // This is the callback for registered commands
                 // Thus we have to reset the users context
                 user.deleteContext();
 
-                let msgHandler = this.getMsgHandler(command.msgHandlerID);
+                // get the correct message-handler depending on the number of parms we got
+                let msgHandlerIndex = Math.min(parms.length, command.msgHandlerIDs.length - 1);
+                let msgHandlerID = command.msgHandlerIDs[msgHandlerIndex];
+                let msgHandler = this.getMsgHandler(msgHandlerID);
                 if(msgHandler !== undefined && msgHandler !== null) {
-                    msgHandler.handler(msg, matches, user);
+                    msgHandler.handler(msg, parms, user);
                 }
             }).catch((e) => {
                 console.error(e);
@@ -140,7 +148,7 @@ class TelegramBotWrapper {
      * Verifies that a message is from a known user.
      * If it is not and the property unknownUserReply is set, the value of unknownUserReply will be sent to the user.
      * @param {object} msg The telegram message-object
-     * @param {RegExpMatchArray} matches The Regex Matches returned by executing a commands regex on the message text
+     * @param {object} matches The RegExp matches
      * @returns {Promise} A Promise that is resolved with { msg, matches, user } if a user is found and rejected if not
      */
     checkMessage(msg, matches) {
@@ -151,7 +159,16 @@ class TelegramBotWrapper {
             });
 
             if(user !== undefined && user !== null) {
-                resolve({ msg : msg, matches : matches, user : user });
+                
+                // turn RegEx Matches into parms String-Array, skipping the first match (full string match)
+                let parms = [];
+                for(let i = 1; i < matches.length; i++) {
+                    if(matches[i] !== undefined) {
+                        parms.push(matches[i]);
+                    }
+                }
+
+                resolve({ msg : msg, parms : parms, user : user });
             } else {
                 if(this.unknownUserReply !== null) {
                     this.sendMessage(msg.chat.id, this.unknownUserReply);

@@ -15,11 +15,11 @@ class TelegramMsgHandler {
     /**
      * Execute the handler-function of this Message-Handler
      * @param {object} msg The original Telegram Message Object
-     * @param {RegExpMatchArray} matches The Regex Matches returned by executing a commands regex on the message text
+     * @param {string[]} parms The Parameters the user provded
      * @param {TelegramBotUser} user User-Object representing the author
      */
-    execute(msg, matches, user) {
-        this.handler(msg, matches, user);
+    execute(msg, parms, user) {
+        this.handler(msg, parms, user);
     }
 }
 
