@@ -1,5 +1,3 @@
-const moment = require('moment');
-
 /**
  * This class holds information about a user of the Bot and manages the users context
  */
@@ -31,7 +29,9 @@ class TelegramBotUser {
      * Checks whether the context of the user has gone past its TTL and deletes it if it has
      */
     verifyContext() {
-        if(this.context !== null && this.contextCreated.diff(moment(), 'minutes') > this.contextTTL) {
+        let diffMs = Math.abs(Date.now() - this.contextCreated);
+        let diffMin = (diffMs / 1000) / 60;
+        if(this.context !== null && diffMin > this.contextTTL) {
             this.deleteContext();
         }
     }
@@ -43,7 +43,7 @@ class TelegramBotUser {
      */
     setContext(context, ttl = 5) {
         this.context = context;
-        this.contextCreated = moment();
+        this.contextCreated = Date.now();
         this.contextTTL = ttl;
     }
 

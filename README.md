@@ -14,11 +14,10 @@ After you created your bot you should have a telegram bot-token which you will n
 ### Prerequisites
 This project depends on the following npm-packages:
 - [node-telegram-bot-api](https://www.npmjs.com/package/node-telegram-bot-api)@^0.61.0
-- [moment](https://www.npmjs.com/package/moment)@^2.29.4
 
 Install all dependencies via the following command:
 ```sh
-npm install node-telegram-bot-api moment
+npm install node-telegram-bot-api
 ``` 
 
 ### Installation
