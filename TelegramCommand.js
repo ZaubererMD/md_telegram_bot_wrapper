@@ -3,7 +3,7 @@
  */
 class TelegramCommand {
     /**
-     * 
+     * Creates a new instance of TelegramCommand
      * @param {string} command The commands identifier. e.g. if this is set to "status", the command in telegram will be "/status"
      * @param {string} description A descriptive text that will be displayed in action-menu within the telegram app
      * @param {string[]} [msgHandlerIDs=null] IDs of the TelegramMessageHandlers that should handle this command.
