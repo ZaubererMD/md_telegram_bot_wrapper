@@ -62,11 +62,12 @@ Message-Handlers are the callback-functions that will be executed when your bot 
 You can add a Message-Handler to the bot via the ``addMsgHandler`` method:
 ```js
 bot.addMsgHandler(
-    new TelegramMsgHandler('MESSAGE_HANDLER_ID',
-        (msg, parms, user) => {
+    new TelegramMsgHandler({
+        id : 'MESSAGE_HANDLER_ID',
+        handler : (msg, parms, user) => {
             // Do whatever you like
         }
-    )
+    })
 );
 ```
 There is also a ``addMsgHandlers`` method which will take an array of ``TelegramMsgHandler`` objects.
@@ -77,12 +78,16 @@ There is also a ``addMsgHandlers`` method which will take an array of ``Telegram
 
 Remember that a ``TelegramMsgHandler`` serves to handle a command with a set amount of parameters. Multiple Message-Handlers are grouped together via a ``TelegramCommand``.
 
+**TODO:** Describe how to handle other content-types like photos or audio
+
 #### Send a response
 If you want to respond to a message you can call the ``sendMessage`` method:
 ```js
 bot.sendMessage(msg.chat.id, RESPONSE_TEXT);
 ```
 Where ``msg`` is the first parameter of your Message-Handlers callback function and ``RESPONSE_TEXT`` is the text you wish to send. Note that this bot always sends messages with the option ``{ parse_mode : 'Markdown' }``. See [Telegram Bot API](https://core.telegram.org/bots/api#sendmessage) for further details.
+
+**TODO:** Describe how to send photos or audio
 
 #### Managing User-Context
 To set the Message-Handler that should be executed on the next message of the user, use the ``setContext`` method on the user-object which is the third parameter in your ``TelegramMsgHandler`` callback function:
@@ -162,20 +167,22 @@ var bot = new TelegramBotWrapper(TELEGRAM_TOKEN);
 bot.addUser(new TelegramBotUser(CHAT_ID));
 
 bot.addMsgHandlers([
-    new TelegramMsgHandler('temperature',
-        (msg, parms, user) => {
+    new TelegramMsgHandler({
+        id : 'temperature',
+        handler : (msg, parms, user) => {
             bot.sendMessage(msg.chat.id, 'Which rooms temperature do you want to know?');
             user.setContext(new TelegramUserContext('temperature_room'));
         }
-    ),
-    new TelegramMsgHandler('temperature_room',
-        (msg, parms, user) => {
+    }),
+    new TelegramMsgHandler({
+        id : 'temperature_room',
+        handler : (msg, parms, user) => {
             let room = parms[0];
             let temperature = getTemperature(room);
             let text = 'Temperature in ' + room + ': ' + temperature + '°C';
             bot.sendMessage(msg.chat.id, text);
         }
-    )
+    })
 ]);
 
 bot.addCommand(new TelegramCommand('temperature', 'Get temperature of a room', ['temperature', 'temperature_room']));
