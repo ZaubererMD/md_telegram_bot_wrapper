@@ -26,8 +26,11 @@ class TelegramBotWrapper {
             this.defaultHandler(msg, { type : 'text', matches : matches });
         });
 
-        this.telegramBot.on('photo', (msg, options) => {
-            this.defaultHandler(msg, { type : 'photo', ...options });
+        ['photo', 'video', 'voice', 'audio', 'document', 'location', 'contact', 'poll', 'sticker']
+        .forEach((mediaType) => {
+            this.telegramBot.on(mediaType, (msg, options) => {
+                this.defaultHandler(msg, { type : mediaType, ...options });
+            });
         });
     }
 
@@ -216,6 +219,33 @@ class TelegramBotWrapper {
                         break;
                     case 'photo':
                         parms = msg.photo;
+                        break;
+                    case 'video':
+                        parms.push(msg.video);
+                        break;
+                    case 'voice':
+                        parms.push(msg.voice);
+                        break;
+                    case 'audio':
+                        parms.push(msg.audio);
+                        break;
+                    case 'document':
+                        parms.push(msg.document);
+                        break;
+                    case 'poll':
+                        parms.push(msg.poll);
+                        break;
+                    case 'location':
+                        parms.push(msg.location);
+                        if(msg.venue !== undefined && msg.venue !== null) {
+                            parms.push(msg.venue);
+                        }
+                        break;
+                    case 'contact':
+                        parms.push(msg.contact);
+                        break;
+                    case 'sticker':
+                        parms.push(msg.sticker);
                         break;
                 }
 
