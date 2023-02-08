@@ -18,16 +18,21 @@ class TelegramBotWrapper {
         this.msgHandlers = [];
         this.commands = [];
         this.unknownUserReply = null;
+        this.debug = false;
 
         // Define default handler
         // Handles all messages that dont start with a forward slash (e.g. not commands)
         this.telegramBot.onText(/^([^/].*)/, (msg, matches) => {
+            this.logDebug('Received a message that is not a command', msg);
+
             // verify that the message comes from a known user
             this.checkMessage(msg, matches)
             .then(({ msg, parms, user }) => {
+                this.logDebug('User:', user);
                 // messages that are no commands can only be handled if there is a user context
                 if(user.hasContext()) {
                     let userContext = user.getContext();
+                    this.logDebug('Context:', userContext);
                     let msgHandler = this.getMsgHandler(userContext.nextMsgHandlerID);
                     if(msgHandler !== undefined && msgHandler !== null) {
                         if(userContext.previousParms !== null) {
@@ -38,9 +43,27 @@ class TelegramBotWrapper {
                     }
                 }
             }).catch((e) => {
-                console.error(e);
+                this.logError(e);
             });
         });
+    }
+
+    /**
+     * Writes data to the console if this.debug is true
+     * @param  {...any} data data to be output on the console
+     */
+    logDebug(...data) {
+        if(this.debug) {
+            console.log('[DEBUG]', ...data);
+        }
+    }
+
+    /**
+     * Writes error-data to the console
+     * @param  {...any} data data to be output on the console
+     */
+    logError(...data) {
+        console.error(...data);
     }
 
     /**
@@ -48,6 +71,7 @@ class TelegramBotWrapper {
      * @param {TelegramBotUser} botUser The user to add
      */
     addUser(botUser) {
+        this.logDebug('New User:', botUser);
         this.users.push(botUser);
     }
 
@@ -64,6 +88,7 @@ class TelegramBotWrapper {
      * @param {TelegramMsgHandler} msgHandler The Message-Handler to add
      */
     addMsgHandler(msgHandler) {
+        this.logDebug('New MessageHandler:', msgHandler.id);
         this.msgHandlers.push(msgHandler);
     }
     /**
@@ -89,13 +114,16 @@ class TelegramBotWrapper {
      * @param {TelegramCommand} command The Command to add
      */
     addCommand(command) {
+        this.logDebug('New Command:', command.command);
         this.commands.push(command);
 
         // Register the Command Handler
         this.telegramBot.onText(command.regex, (msg, matches) => {
+            this.logDebug('Received a command:', command.command);
             // verify that the message comes from a known user
             this.checkMessage(msg, matches)
             .then(({ msg, parms, user }) => {
+                this.logDebug('User:', user);
                 // This is the callback for registered commands
                 // Thus we have to reset the users context
                 user.deleteContext();
@@ -108,7 +136,7 @@ class TelegramBotWrapper {
                     msgHandler.handler(msg, parms, user);
                 }
             }).catch((e) => {
-                console.error(e);
+                this.logError(e);
             });
         });
     }
@@ -191,6 +219,8 @@ class TelegramBotWrapper {
      * @param {string} text The text of the message
      */
     sendMessage(chatID, text) {
+        this.logDebug('Sending a message to ' + chatID);
+        this.logDebug('Message:', text);
         this.telegramBot.sendMessage(chatID, text, { parse_mode : 'Markdown' });
     }
 }
