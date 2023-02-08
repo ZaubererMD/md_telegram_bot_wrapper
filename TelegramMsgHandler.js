@@ -3,13 +3,25 @@
  */
 class TelegramMsgHandler {
     /**
-     * Creates a new instance of TelegramMsgHandler
-     * @param {string} id ID of this Message-Handler
-     * @param {function} handler Function that will be called when a message for the Handler is received
+     * @typedef {Function} MessageHandler
+     * @param {Object} msg
+     * @param {any[]} parms
+     * @param {TelegramBotUser} user
      */
-    constructor(id, handler) {
+    /**
+     * @typedef {Object} MessageHandlerProperties
+     * @property {string} id ID of the Message-Handler
+     * @property {MessageHandler} handler Function that will be called when a message for the Handler is received
+     * @property {string} [expectedType='text'] The expected type of message from the user to use the handler. If the user sends another message-type, the handler will not be executed.
+     */
+    /**
+     * Creates a new instance of TelegramMsgHandler
+     * @param {MessageHandlerProperties} properties Properties of the message handler
+     */
+    constructor({ id, handler, expectedType = 'text' }) {
         this.id = id;
         this.handler = handler;
+        this.expectedType = expectedType;
     }
 
     /**

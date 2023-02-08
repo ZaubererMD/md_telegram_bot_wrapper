@@ -23,28 +23,40 @@ class TelegramBotWrapper {
         // Define default handler
         // Handles all messages that dont start with a forward slash (e.g. not commands)
         this.telegramBot.onText(/^([^/].*)/, (msg, matches) => {
-            this.logDebug('Received a message that is not a command', msg);
+            this.defaultHandler(msg, { type : 'text', matches : matches });
+        });
 
-            // verify that the message comes from a known user
-            this.checkMessage(msg, matches)
-            .then(({ msg, parms, user }) => {
-                this.logDebug('User:', user);
-                // messages that are no commands can only be handled if there is a user context
-                if(user.hasContext()) {
-                    let userContext = user.getContext();
-                    this.logDebug('Context:', userContext);
-                    let msgHandler = this.getMsgHandler(userContext.nextMsgHandlerID);
-                    if(msgHandler !== undefined && msgHandler !== null) {
-                        if(userContext.previousParms !== null) {
-                            // prepend the previous parameters before the new ones
-                            parms = [...userContext.previousParms, ...parms];
-                        }
+        this.telegramBot.on('photo', (msg, options) => {
+            this.defaultHandler(msg, { type : 'photo', ...options });
+        });
+    }
+
+    defaultHandler(msg, options) {
+        this.logDebug('Received a message that is not a command', msg);
+        this.logDebug('Options:', options);
+
+        // verify that the message comes from a known user
+        this.checkMessage(msg, options)
+        .then(({ msg, type, parms, user }) => {
+            this.logDebug('User:', user);
+            // messages that are no commands can only be handled if there is a user context
+            if(user.hasContext()) {
+                let userContext = user.getContext();
+                this.logDebug('Context:', userContext);
+                let msgHandler = this.getMsgHandler(userContext.nextMsgHandlerID);
+                if(msgHandler !== undefined && msgHandler !== null) {
+                    if(userContext.previousParms !== null) {
+                        // prepend the previous parameters before the new ones
+                        parms = [...userContext.previousParms, ...parms];
+                    }
+                    // check if the message has the correct type for the handler
+                    if(msgHandler.expectedType === type) {
                         msgHandler.execute(msg, parms, user);
                     }
                 }
-            }).catch((e) => {
-                this.logError(e);
-            });
+            }
+        }).catch((e) => {
+            this.logError(e);
         });
     }
 
@@ -121,8 +133,8 @@ class TelegramBotWrapper {
         this.telegramBot.onText(command.regex, (msg, matches) => {
             this.logDebug('Received a command:', command.command);
             // verify that the message comes from a known user
-            this.checkMessage(msg, matches)
-            .then(({ msg, parms, user }) => {
+            this.checkMessage(msg, { type : 'text', matches : matches })
+            .then(({ msg, type, parms, user }) => {
                 this.logDebug('User:', user);
                 // This is the callback for registered commands
                 // Thus we have to reset the users context
@@ -133,7 +145,10 @@ class TelegramBotWrapper {
                 let msgHandlerID = command.msgHandlerIDs[msgHandlerIndex];
                 let msgHandler = this.getMsgHandler(msgHandlerID);
                 if(msgHandler !== undefined && msgHandler !== null) {
-                    msgHandler.handler(msg, parms, user);
+                    // check if the message has the correct type for the handler
+                    if(msgHandler.expectedType === type) {
+                        msgHandler.handler(msg, parms, user);
+                    }
                 }
             }).catch((e) => {
                 this.logError(e);
@@ -176,10 +191,10 @@ class TelegramBotWrapper {
      * Verifies that a message is from a known user.
      * If it is not and the property unknownUserReply is set, the value of unknownUserReply will be sent to the user.
      * @param {object} msg The telegram message-object
-     * @param {object} matches The RegExp matches
+     * @param {object} options
      * @returns {Promise} A Promise that is resolved with { msg, matches, user } if a user is found and rejected if not
      */
-    checkMessage(msg, matches) {
+    checkMessage(msg, options) {
         return new Promise((resolve, reject) => {
             // Verify that this a known user that is allowed to communicate with the bot
             let user = this.users.find((user) => {
@@ -188,15 +203,23 @@ class TelegramBotWrapper {
 
             if(user !== undefined && user !== null) {
                 
-                // turn RegEx Matches into parms String-Array, skipping the first match (full string match)
+                // set parms based on the message type
                 let parms = [];
-                for(let i = 1; i < matches.length; i++) {
-                    if(matches[i] !== undefined) {
-                        parms.push(matches[i]);
-                    }
+                switch(options.type) {
+                    case 'text':
+                        // turn RegEx Matches into parms String-Array, skipping the first match (full string match)
+                        for(let i = 1; i < options.matches.length; i++) {
+                            if(options.matches[i] !== undefined) {
+                                parms.push(options.matches[i]);
+                            }
+                        }
+                        break;
+                    case 'photo':
+                        parms = msg.photo;
+                        break;
                 }
 
-                resolve({ msg : msg, parms : parms, user : user });
+                resolve({ msg : msg, type : options.type, parms : parms, user : user });
             } else {
                 if(this.unknownUserReply !== null) {
                     this.sendMessage(msg.chat.id, this.unknownUserReply);
@@ -222,6 +245,19 @@ class TelegramBotWrapper {
         this.logDebug('Sending a message to ' + chatID);
         this.logDebug('Message:', text);
         this.telegramBot.sendMessage(chatID, text, { parse_mode : 'Markdown' });
+    }
+
+    /**
+     * Sends a photo via telegram
+     * @param {integer} chatID The telegram-chat-id to send the text to
+     * @param {*} photo 
+     * @param {*} options 
+     */
+    sendPhoto(chatID, photo, options) {
+        this.logDebug('Sending a photo to ' + chatID);
+        this.logDebug('Photo:', photo);
+        this.logDebug('Options:', options);
+        this.telegramBot.sendPhoto(chatID, photo, options);
     }
 }
 
