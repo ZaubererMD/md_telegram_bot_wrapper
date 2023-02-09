@@ -19,22 +19,27 @@ class TelegramBotWrapper {
         this.commands = [];
         this.unknownUserReply = null;
         this.debug = false;
+        this.defaultHandler = null;
 
-        // Define default handler
         // Handles all messages that dont start with a forward slash (e.g. not commands)
         this.telegramBot.onText(/^([^/].*)/, (msg, matches) => {
-            this.defaultHandler(msg, { type : 'text', matches : matches });
+            this.nonCommandHandler(msg, { type : 'text', matches : matches });
         });
-
+        // Handles all media messages
         ['photo', 'video', 'voice', 'audio', 'document', 'location', 'contact', 'poll', 'sticker']
         .forEach((mediaType) => {
             this.telegramBot.on(mediaType, (msg, options) => {
-                this.defaultHandler(msg, { type : mediaType, ...options });
+                this.nonCommandHandler(msg, { type : mediaType, ...options });
             });
         });
     }
 
-    defaultHandler(msg, options) {
+    /**
+     * Handles all messages that are not commands
+     * @param {object} msg 
+     * @param {object} options 
+     */
+    nonCommandHandler(msg, options) {
         this.logDebug('Received a message that is not a command', msg);
         this.logDebug('Options:', options);
 
@@ -55,6 +60,15 @@ class TelegramBotWrapper {
                     // check if the message has the correct type for the handler
                     if(msgHandler.expectedType === type) {
                         msgHandler.execute(msg, parms, user);
+                    }
+                }
+            } else {
+                // If the user just sent something without any context, we might pass this to the default-handler if one was provided
+                if(this.defaultHandler !== null) {
+                    let msgHandler = this.getMsgHandler(this.defaultHandler);
+                    if(msgHandler !== undefined && msgHandler !== null) {
+                        this.logDebug('Calling default handler');
+                        msgHandler.execute(msg, parms, user, options.type);
                     }
                 }
             }
@@ -112,6 +126,13 @@ class TelegramBotWrapper {
      */
     addMsgHandlers(msgHandlers) {
         this.msgHandlers.push(...msgHandlers);
+    }
+    /**
+     * Sets the default handler that handles message that are no command when no context for the user is present
+     * @param {string} msgHandler ID of the MessageHandler 
+     */
+    setDefaultHandler(msgHandler) {
+        this.defaultHandler = msgHandler;
     }
     /**
      * Retrieves a Message-Handler
@@ -288,6 +309,19 @@ class TelegramBotWrapper {
         this.logDebug('Photo:', photo);
         this.logDebug('Options:', options);
         this.telegramBot.sendPhoto(chatID, photo, options);
+    }
+
+    /**
+     * Sends an audio via telegram
+     * @param {integer} chatID The telegram-chat-id to send the text to
+     * @param {*} photo 
+     * @param {*} options 
+     */
+    sendAudio(chatID, audio, options) {
+        this.logDebug('Sending audio to ' + chatID);
+        this.logDebug('Audio:', audio);
+        this.logDebug('Options:', options);
+        this.telegramBot.sendAudio(chatID, audio, options);
     }
 }
 

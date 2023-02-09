@@ -29,9 +29,10 @@ class TelegramMsgHandler {
      * @param {object} msg The original Telegram Message Object
      * @param {string[]} parms The Parameters the user provded
      * @param {TelegramBotUser} user User-Object representing the author
+     * @param {string} [type='text'] the type of the message. This will really only be useful for the default-handler
      */
-    execute(msg, parms, user) {
-        this.handler(msg, parms, user);
+    execute(msg, parms, user, type = 'text') {
+        this.handler(msg, parms, user, type);
     }
 }
 
