@@ -78,7 +78,9 @@ There is also a ``addMsgHandlers`` method which will take an array of ``Telegram
 
 Remember that a ``TelegramMsgHandler`` serves to handle a command with a set amount of parameters. Multiple Message-Handlers are grouped together via a ``TelegramCommand``.
 
-**TODO:** Describe how to handle other content-types like photos or audio
+**TODO:**
+- Describe how to handle other content-types like photos or audio
+- Describe default message-handler
 
 #### Send a response
 If you want to respond to a message you can call the ``sendMessage`` method:
@@ -98,7 +100,7 @@ Where ``NEXT_MESSAGE_HANDLER_ID`` is the id of the ``TelegramMsgHandler`` to use
 
 Note that the context is reset as soon as the user issues a new command (a message starting with "/"). Additionally, a context will be considered invalid and thus deleted 5 minutes after its creation. You can control this timespan by providing a second argument to the ``setContext`` method:
 ```js
-user.setContext(new TelegramUserContext('NEXT_MESSAGE_HANDLER_ID'), 10));
+user.setContext(new TelegramUserContext('NEXT_MESSAGE_HANDLER_ID'), 10);
 ```
 This example creates a Context that lives for 10 minutes.
 
@@ -129,7 +131,10 @@ Note that if you do not pass on parms in this manner they will not be available 
 ### Create Commands
 Finally, to create commands for your bot, you can use the ``addCommand`` method. In the simplest case your command takes no parameters, then you can create a Command with just two arguments:
 ```js
-bot.addCommand(new TelegramCommand('COMMAND', 'DESCRIPTION'));
+bot.addCommand(new TelegramCommand({
+    command : 'COMMAND',
+    description : 'DESCRIPTION'
+}));
 ```
 where ``COMMAND`` is the actual command-string (that can be used within Telegram with a "/" in front of it) and ``DESCRIPTION`` is a short descriptive text that will be used in the command-menu when you announce your commands to telegram.
 
@@ -139,7 +144,13 @@ In this case we left two optional parameters empty:
 
 To have a further example with one parameter, take a look at the following code:
 ```js
-bot.addCommand('temperature', 'Get temperature of a room', ['temperature', 'temperature_room'], 1);
+bot.addCommand({
+    command : 'temperature',
+    description : 'Get temperature of a room',
+    msgHandlerIDs : ['temperature', 'temperature_room'],
+    numParms : 1,
+    announce : true
+});
 ```
 Here it would be required that message-handlers with the IDs ``temperature`` and ``temperature_room`` do exist. The ``temperature`` handler should ask the user to provide the name of the room and set the user-context to use ``temperature_room`` as the next message handler. If the user then replies, or when he calls the command with a parameter in the first place, the ``temperature_room`` message-handler will be used and the bot can return the measured temperature.
 
@@ -148,6 +159,8 @@ Announcing commands to telegram is not required, but you can do so to enable the
 ```js
 bot.announceCommands();
 ```
+
+To create commands that are not announced to telegram (and thus don't appear in the action-menu), set their ``announce`` property to ``false``.
 
 ## Example
 The following should server as a basic example to get you started. It will create a bot with a single command ``/temperature`` as described in the Usage-section.
@@ -185,7 +198,11 @@ bot.addMsgHandlers([
     })
 ]);
 
-bot.addCommand(new TelegramCommand('temperature', 'Get temperature of a room', ['temperature', 'temperature_room']));
+bot.addCommand(new TelegramCommand({
+    command : 'temperature',
+    description : 'Get temperature of a room',
+    msgHandlerIDs : ['temperature', 'temperature_room']
+}));
 
 bot.announceCommands();
 ```
