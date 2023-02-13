@@ -368,7 +368,7 @@ class TelegramBotWrapper {
 
     /**
      * Sends an audio via telegram
-     * @param {integer} chatID The telegram-chat-id to send the text to
+     * @param {integer} chatID The telegram-chat-id to send the audio to
      * @param {*} audio 
      * @param {*} options 
      */
@@ -377,6 +377,19 @@ class TelegramBotWrapper {
         this.logDebug('Audio:', audio);
         this.logDebug('Options:', options);
         this.telegramBot.sendAudio(chatID, audio, options);
+    }
+
+    /**
+     * Sends aa video via telegram
+     * @param {integer} chatID The telegram-chat-id to send the video to
+     * @param {*} video 
+     * @param {*} options 
+     */
+    sendVideo(chatID, video, options) {
+        this.logDebug('Sending video to ' + chatID);
+        this.logDebug('Video:', video);
+        this.logDebug('Options:', options);
+        this.telegramBot.sendVideo(chatID, video, options);
     }
 }
 
