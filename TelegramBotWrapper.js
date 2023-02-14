@@ -380,6 +380,19 @@ class TelegramBotWrapper {
     }
 
     /**
+     * Sends a voice-message via telegram
+     * @param {integer} chatID The telegram-chat-id to send the voice-message to
+     * @param {*} voice 
+     * @param {*} options 
+     */
+    sendVoice(chatID, voice, options) {
+        this.logDebug('Sending voice to ' + chatID);
+        this.logDebug('Voice:', voice);
+        this.logDebug('Options:', options);
+        this.telegramBot.sendVoice(chatID, voice, options);
+    }
+
+    /**
      * Sends aa video via telegram
      * @param {integer} chatID The telegram-chat-id to send the video to
      * @param {*} video 
